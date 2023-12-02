@@ -97,6 +97,35 @@ pub fn solve_part_1(p: &Problem) -> usize {
         .sum()
 }
 
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> usize {
+    let Problem { games } = p;
+
+    games
+        .iter()
+        .map(|Game { subsets, .. }| {
+            let mut max_red = 0;
+            let mut max_green = 0;
+            let mut max_blue = 0;
+
+            for subset in subsets {
+                let &SubSet(r, b, g) = subset;
+                if r > max_red {
+                    max_red = r;
+                }
+                if g > max_green {
+                    max_green = g;
+                }
+                if b > max_blue {
+                    max_blue = b;
+                }
+            }
+
+            max_red * max_green * max_blue
+        })
+        .sum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -139,5 +168,11 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p), 8);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        assert_eq!(solve_part_2(&p), 2286);
     }
 }
