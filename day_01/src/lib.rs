@@ -43,21 +43,14 @@ pub fn solve_part_2(p: &Problem) -> u32 {
     let mut result = 0;
 
     for line in &p.lines {
-        let first_word_digit_idx = digits
-            .iter()
-            .enumerate()
-            .filter_map(|(digit_idx, digit_word)| {
-                line.find(digit_word).map(|idx| (idx, digit_idx as u32 + 1))
-            })
+        let first_word_digit_idx = (1u32..)
+            .zip(digits)
+            .filter_map(|(val, word)| line.find(word).map(|idx| (idx, val)))
             .min();
 
-        let last_word_digit_idx = digits
-            .iter()
-            .enumerate()
-            .filter_map(|(digit_idx, digit_word)| {
-                line.rfind(digit_word)
-                    .map(|idx| (idx, digit_idx as u32 + 1))
-            })
+        let last_word_digit_idx = (1u32..)
+            .zip(digits)
+            .filter_map(|(val, word)| line.rfind(word).map(|idx| (idx, val)))
             .max();
 
         let digit_numbers = line
