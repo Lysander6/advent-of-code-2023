@@ -17,9 +17,11 @@ impl FromStr for Problem {
 
 #[must_use]
 pub fn solve_part_1(p: &Problem) -> u32 {
+    let Problem { lines } = p;
+
     let to_digit = |c: &char| c.to_digit(10);
 
-    p.lines
+    lines
         .iter()
         .map(|l| {
             let nums = l.chars().filter(char::is_ascii_digit).collect::<Vec<_>>();
@@ -34,23 +36,25 @@ pub fn solve_part_1(p: &Problem) -> u32 {
 
 #[must_use]
 pub fn solve_part_2(p: &Problem) -> u32 {
-    let digits = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
+    let word_digits = (1u32..)
+        .zip([
+            "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        ])
+        .collect::<Vec<_>>();
 
     let to_digit_with_idx = |&(idx, c): &(usize, char)| Some((idx, c.to_digit(10).unwrap_or(0)));
 
     let mut result = 0;
 
     for line in &p.lines {
-        let first_word_digit_idx = (1u32..)
-            .zip(digits)
-            .filter_map(|(val, word)| line.find(word).map(|idx| (idx, val)))
+        let first_word_digit_idx = word_digits
+            .iter()
+            .filter_map(|&(val, word)| line.find(word).map(|idx| (idx, val)))
             .min();
 
-        let last_word_digit_idx = (1u32..)
-            .zip(digits)
-            .filter_map(|(val, word)| line.rfind(word).map(|idx| (idx, val)))
+        let last_word_digit_idx = word_digits
+            .iter()
+            .filter_map(|&(val, word)| line.rfind(word).map(|idx| (idx, val)))
             .max();
 
         let digit_chars = line
