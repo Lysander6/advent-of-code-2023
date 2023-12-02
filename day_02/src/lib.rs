@@ -2,36 +2,35 @@ use std::str::FromStr;
 
 use anyhow::bail;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 struct SubSet(usize, usize, usize); // red, green, blue
 
 impl FromStr for SubSet {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut red = 0;
-        let mut green = 0;
-        let mut blue = 0;
+        let mut subset = SubSet::default();
 
-        for colour_count in s.split(", ") {
-            match colour_count.split_once(' ') {
-                Some((count, color)) => match color {
-                    "red" => {
-                        red = count.parse()?;
-                    }
-                    "green" => {
-                        green = count.parse()?;
-                    }
-                    "blue" => {
-                        blue = count.parse()?;
-                    }
-                    _ => unreachable!(),
-                },
-                None => unreachable!(),
+        for color_count in s.split(", ") {
+            let (count, color) = color_count.split_once(' ').expect("malformed color count");
+
+            let count = count.parse()?;
+
+            match color {
+                "red" => {
+                    subset.0 = count;
+                }
+                "green" => {
+                    subset.1 = count;
+                }
+                "blue" => {
+                    subset.2 = count;
+                }
+                c => bail!("unknown color {}", c),
             }
         }
 
-        Ok(SubSet(red, green, blue))
+        Ok(subset)
     }
 }
 
@@ -45,19 +44,18 @@ impl FromStr for Game {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let Some((game_id_str, subsets)) = s.split_once(": ") else {
-            bail!("malformed game");
-        };
+        let (game_id_str, subsets) = s.split_once(": ").expect("malformed game");
 
         let id = game_id_str
             .split_once(' ')
-            .and_then(|(_, id)| id.parse::<usize>().ok())
-            .unwrap();
+            .expect("malformed game prefix")
+            .1
+            .parse::<usize>()?;
 
         let subsets = subsets
             .split("; ")
             .map(str::parse)
-            .collect::<Result<Vec<SubSet>, _>>()?;
+            .collect::<Result<_, _>>()?;
 
         Ok(Game { id, subsets })
     }
@@ -72,7 +70,7 @@ impl FromStr for Problem {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let games = s.lines().map(str::parse).collect::<Result<Vec<_>, _>>()?;
+        let games = s.lines().map(str::parse).collect::<Result<_, _>>()?;
 
         Ok(Problem { games })
     }
@@ -87,7 +85,7 @@ pub fn solve_part_1(p: &Problem) -> usize {
         .filter_map(|Game { id, subsets }| {
             if subsets
                 .iter()
-                .all(|ss| ss.0 <= 12 && ss.1 <= 13 && ss.2 <= 14)
+                .all(|&SubSet(r, g, b)| r <= 12 && g <= 13 && b <= 14)
             {
                 Some(id)
             } else {
@@ -104,24 +102,13 @@ pub fn solve_part_2(p: &Problem) -> usize {
     games
         .iter()
         .map(|Game { subsets, .. }| {
-            let mut max_red = 0;
-            let mut max_green = 0;
-            let mut max_blue = 0;
+            let (max_r, max_g, max_b) = subsets
+                .iter()
+                .fold((0, 0, 0), |(x, y, z), &SubSet(r, g, b)| {
+                    (x.max(r), y.max(g), z.max(b))
+                });
 
-            for subset in subsets {
-                let &SubSet(r, b, g) = subset;
-                if r > max_red {
-                    max_red = r;
-                }
-                if g > max_green {
-                    max_green = g;
-                }
-                if b > max_blue {
-                    max_blue = b;
-                }
-            }
-
-            max_red * max_green * max_blue
+            max_r * max_g * max_b
         })
         .sum()
 }
