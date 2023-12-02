@@ -17,17 +17,15 @@ impl FromStr for Problem {
 
 #[must_use]
 pub fn solve_part_1(p: &Problem) -> u32 {
+    let to_digit = |c: &char| c.to_digit(10);
+
     p.lines
         .iter()
         .map(|l| {
-            let nums = l
-                .chars()
-                .filter(char::is_ascii_digit)
-                .map(|c| c.to_digit(10).unwrap_or(0))
-                .collect::<Vec<_>>();
+            let nums = l.chars().filter(char::is_ascii_digit).collect::<Vec<_>>();
 
-            let a = *nums.first().unwrap_or(&0);
-            let b = *nums.last().unwrap_or(&0);
+            let a = nums.first().and_then(to_digit).unwrap_or(0);
+            let b = nums.last().and_then(to_digit).unwrap_or(0);
 
             a * 10 + b
         })
@@ -39,6 +37,8 @@ pub fn solve_part_2(p: &Problem) -> u32 {
     let digits = [
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     ];
+
+    let to_digit_with_idx = |&(idx, c): &(usize, char)| Some((idx, c.to_digit(10).unwrap_or(0)));
 
     let mut result = 0;
 
@@ -53,15 +53,14 @@ pub fn solve_part_2(p: &Problem) -> u32 {
             .filter_map(|(val, word)| line.rfind(word).map(|idx| (idx, val)))
             .max();
 
-        let digit_numbers = line
+        let digit_chars = line
             .chars()
             .enumerate()
             .filter(|(_, c)| c.is_ascii_digit())
-            .map(|(idx, c)| (idx, c.to_digit(10).unwrap_or(0)))
             .collect::<Vec<_>>();
 
-        let first_real_digit_idx = digit_numbers.first().copied();
-        let last_real_digit_idx = digit_numbers.last().copied();
+        let first_real_digit_idx = digit_chars.first().and_then(to_digit_with_idx);
+        let last_real_digit_idx = digit_chars.last().and_then(to_digit_with_idx);
 
         let a = match (first_word_digit_idx, first_real_digit_idx) {
             (None, None) => 0,
