@@ -1,4 +1,7 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Problem {
@@ -104,6 +107,48 @@ pub fn solve_part_1(p: &Problem) -> u32 {
         .sum()
 }
 
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> u32 {
+    let Problem { numbers, symbols } = p;
+    let mut possible_gears = symbols
+        .iter()
+        .filter_map(|(&pos, &c)| {
+            if c == '*' {
+                Some((pos, Vec::<u32>::new()))
+            } else {
+                None
+            }
+        })
+        .collect::<HashMap<(usize, usize), Vec<u32>>>();
+
+    for &((x, y), number, len) in numbers {
+        let neighbour_gears = (y..(y + len))
+            .flat_map(|y| {
+                neighbour_offsets(x, y, usize::MAX, usize::MAX)
+                    .iter()
+                    .map(move |&(dx, dy)| ((x as isize + dx) as usize, (y as isize + dy) as usize))
+            })
+            .filter(|k| possible_gears.contains_key(k))
+            .collect::<HashSet<(usize, usize)>>();
+
+        for gear in neighbour_gears {
+            possible_gears.entry(gear).and_modify(|nums| {
+                nums.push(number);
+            });
+        }
+    }
+
+    let actual_gears = possible_gears.iter().filter_map(|(_, nums)| {
+        if nums.len() == 2 {
+            Some(nums[0] * nums[1])
+        } else {
+            None
+        }
+    });
+
+    actual_gears.sum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,5 +213,11 @@ mod tests {
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p), 4361);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        assert_eq!(solve_part_2(&p), 467_835);
     }
 }
