@@ -59,16 +59,11 @@ fn find_number_slices(s: &str) -> Vec<(usize, String)> {
     v
 }
 
-fn neighbour_offsets(i: usize, j: usize, max_i: usize, max_j: usize) -> &'static [(isize, isize)] {
+fn neighbour_offsets(i: usize, j: usize) -> &'static [(isize, isize)] {
     match (i, j) {
         (0, 0) => &[(0, 1), (1, 0), (1, 1)],
-        (0, j) if j == max_j => &[(0, -1), (1, 0), (1, -1)],
         (0, _) => &[(0, -1), (0, 1), (1, -1), (1, 0), (1, 1)],
-        (i, 0) if i == max_i => &[(-1, 0), (-1, 1), (0, 1)],
         (_, 0) => &[(-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)],
-        (i, j) if i == max_i && j == max_j => &[(0, -1), (-1, 0), (-1, -1)],
-        (i, _) if i == max_i => &[(0, -1), (0, 1), (-1, -1), (-1, 0), (-1, 1)],
-        (_, j) if j == max_j => &[(0, -1), (-1, 0), (1, 0), (-1, -1), (1, -1)],
         (_, _) => &[
             (-1, 0),
             (1, 0),
@@ -91,11 +86,9 @@ pub fn solve_part_1(p: &Problem) -> u32 {
         .filter_map(|&((x, y), number, len)| {
             if (y..(y + len))
                 .flat_map(|y| {
-                    neighbour_offsets(x, y, usize::MAX, usize::MAX)
-                        .iter()
-                        .map(move |&(dx, dy)| {
-                            ((x as isize + dx) as usize, (y as isize + dy) as usize)
-                        })
+                    neighbour_offsets(x, y).iter().map(move |&(dx, dy)| {
+                        ((x as isize + dx) as usize, (y as isize + dy) as usize)
+                    })
                 })
                 .any(|k| symbols.contains_key(&k))
             {
@@ -124,7 +117,7 @@ pub fn solve_part_2(p: &Problem) -> u32 {
     for &((x, y), number, len) in numbers {
         let neighbour_gears = (y..(y + len))
             .flat_map(|y| {
-                neighbour_offsets(x, y, usize::MAX, usize::MAX)
+                neighbour_offsets(x, y)
                     .iter()
                     .map(move |&(dx, dy)| ((x as isize + dx) as usize, (y as isize + dy) as usize))
             })
