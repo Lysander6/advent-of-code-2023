@@ -5,7 +5,9 @@ use std::{
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Problem {
+    // position, part number, length
     numbers: Vec<((usize, usize), u32, usize)>,
+    // position, symbol
     symbols: HashMap<(usize, usize), char>,
 }
 
@@ -44,9 +46,8 @@ fn find_number_slices(s: &str) -> Vec<(usize, String)> {
 
     while let Some(offset) = s[i..].find(|c: char| c.is_ascii_digit()) {
         let idx = i + offset;
-        let j = s[idx..].find(|c: char| !c.is_ascii_digit());
 
-        if let Some(j) = j {
+        if let Some(j) = s[idx..].find(|c: char| !c.is_ascii_digit()) {
             let idx_end = idx + j;
             v.push((idx, s[idx..idx_end].to_string()));
             i = idx_end;
@@ -103,6 +104,7 @@ pub fn solve_part_1(p: &Problem) -> u32 {
 #[must_use]
 pub fn solve_part_2(p: &Problem) -> u32 {
     let Problem { numbers, symbols } = p;
+
     let mut possible_gears = symbols
         .iter()
         .filter_map(|(&pos, &c)| {
@@ -115,7 +117,7 @@ pub fn solve_part_2(p: &Problem) -> u32 {
         .collect::<HashMap<(usize, usize), Vec<u32>>>();
 
     for &((x, y), number, len) in numbers {
-        let neighbour_gears = (y..(y + len))
+        let neighbour_gear_indices = (y..(y + len))
             .flat_map(|y| {
                 neighbour_offsets(x, y)
                     .iter()
@@ -124,22 +126,23 @@ pub fn solve_part_2(p: &Problem) -> u32 {
             .filter(|k| possible_gears.contains_key(k))
             .collect::<HashSet<(usize, usize)>>();
 
-        for gear in neighbour_gears {
+        for gear in neighbour_gear_indices {
             possible_gears.entry(gear).and_modify(|nums| {
                 nums.push(number);
             });
         }
     }
 
-    let actual_gears = possible_gears.iter().filter_map(|(_, nums)| {
-        if nums.len() == 2 {
-            Some(nums[0] * nums[1])
-        } else {
-            None
-        }
-    });
-
-    actual_gears.sum()
+    possible_gears
+        .iter()
+        .filter_map(|(_, nums)| {
+            if nums.len() == 2 {
+                Some(nums[0] * nums[1])
+            } else {
+                None
+            }
+        })
+        .sum()
 }
 
 #[cfg(test)]
