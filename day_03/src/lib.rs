@@ -25,13 +25,9 @@ impl FromStr for Problem {
 
             p.numbers.extend(numbers);
 
-            let symbols = line.char_indices().filter_map(|(y, c)| {
-                if c != '.' && !c.is_ascii_digit() {
-                    Some(((x, y), c))
-                } else {
-                    None
-                }
-            });
+            let symbols = line
+                .char_indices()
+                .filter_map(|(y, c)| (c != '.' && !c.is_ascii_digit()).then_some(((x, y), c)));
 
             p.symbols.extend(symbols);
         }
@@ -85,18 +81,14 @@ pub fn solve_part_1(p: &Problem) -> u32 {
     numbers
         .iter()
         .filter_map(|&((x, y), number, len)| {
-            if (y..(y + len))
+            (y..(y + len))
                 .flat_map(|y| {
                     neighbour_offsets(x, y).iter().map(move |&(dx, dy)| {
                         ((x as isize + dx) as usize, (y as isize + dy) as usize)
                     })
                 })
                 .any(|k| symbols.contains_key(&k))
-            {
-                Some(number)
-            } else {
-                None
-            }
+                .then_some(number)
         })
         .sum()
 }
@@ -107,13 +99,8 @@ pub fn solve_part_2(p: &Problem) -> u32 {
 
     let mut possible_gears = symbols
         .iter()
-        .filter_map(|(&pos, &c)| {
-            if c == '*' {
-                Some((pos, Vec::<u32>::new()))
-            } else {
-                None
-            }
-        })
+        .filter(|&(_, &c)| c == '*')
+        .map(|(&pos, _)| (pos, vec![]))
         .collect::<HashMap<(usize, usize), Vec<u32>>>();
 
     for &((x, y), number, len) in numbers {
@@ -135,13 +122,8 @@ pub fn solve_part_2(p: &Problem) -> u32 {
 
     possible_gears
         .iter()
-        .filter_map(|(_, nums)| {
-            if nums.len() == 2 {
-                Some(nums[0] * nums[1])
-            } else {
-                None
-            }
-        })
+        .filter(|&(_, nums)| nums.len() == 2)
+        .map(|(_, nums)| nums[0] * nums[1])
         .sum()
 }
 

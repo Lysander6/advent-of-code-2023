@@ -83,14 +83,10 @@ pub fn solve_part_1(p: &Problem) -> usize {
     games
         .iter()
         .filter_map(|Game { id, subsets }| {
-            if subsets
+            subsets
                 .iter()
                 .all(|&SubSet(r, g, b)| r <= 12 && g <= 13 && b <= 14)
-            {
-                Some(id)
-            } else {
-                None
-            }
+                .then_some(id)
         })
         .sum()
 }
