@@ -76,13 +76,13 @@ pub fn solve_part_2(p: &Problem) -> u64 {
     for (i, Card { winning, numbers }) in cards.iter().enumerate() {
         let common = winning.intersection(numbers).count();
 
-        if common > 0 {
-            for j in (i + 1)..=(i + common) {
-                let times = copies[i];
-                if let Some(a) = copies.get_mut(j) {
-                    *a += times;
-                }
-            }
+        if common == 0 {
+            continue;
+        }
+
+        let times = copies[i];
+        for copy in &mut copies[(i + 1)..=(i + common)] {
+            *copy += times;
         }
     }
 
