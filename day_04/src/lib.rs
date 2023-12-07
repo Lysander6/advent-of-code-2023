@@ -49,6 +49,10 @@ impl FromStr for Problem {
     }
 }
 
+/// # Errors
+///
+/// Returns error when count of intersection of winning and chosen numbers can't be casted down to
+/// u32.
 pub fn solve_part_1(p: &Problem) -> Result<u64, anyhow::Error> {
     let Problem { cards } = p;
     let mut result = 0;
@@ -62,6 +66,27 @@ pub fn solve_part_1(p: &Problem) -> Result<u64, anyhow::Error> {
     }
 
     Ok(result)
+}
+
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> u64 {
+    let Problem { cards } = p;
+    let mut copies = vec![1u64; cards.len()];
+
+    for (i, Card { winning, numbers }) in cards.iter().enumerate() {
+        let common = winning.intersection(numbers).count();
+
+        if common > 0 {
+            for j in (i + 1)..=(i + common) {
+                let times = copies[i];
+                if let Some(a) = copies.get_mut(j) {
+                    *a += times;
+                }
+            }
+        }
+    }
+
+    copies.iter().sum()
 }
 
 #[cfg(test)]
@@ -80,5 +105,11 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11";
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p).unwrap(), 13);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        assert_eq!(solve_part_2(&p), 30);
     }
 }
