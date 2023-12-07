@@ -24,6 +24,10 @@ impl From<[Card; 5]> for HandType {
         match card_counts.len() {
             1 => Self::FiveOfAKind,
             2 => {
+                if card_counts.contains_key(&Card::Joker) {
+                    return Self::FiveOfAKind;
+                }
+
                 if card_counts.iter().any(|(_, &count)| count == 4) {
                     Self::FourOfAKind
                 } else {
@@ -31,14 +35,41 @@ impl From<[Card; 5]> for HandType {
                 }
             }
             3 => {
+                let jokers_count = card_counts.get(&Card::Joker).unwrap_or(&0);
+                match &jokers_count {
+                    3 | 2 => {
+                        return Self::FourOfAKind;
+                    }
+                    1 => {
+                        if card_counts.iter().any(|(_, &count)| count == 3) {
+                            return Self::FourOfAKind;
+                        }
+
+                        return Self::FullHouse;
+                    }
+                    _ => {}
+                };
+
                 if card_counts.iter().any(|(_, &count)| count == 3) {
                     Self::ThreeOfAKind
                 } else {
                     Self::TwoPair
                 }
             }
-            4 => Self::OnePair,
-            5 => Self::HighCard,
+            4 => {
+                if card_counts.contains_key(&Card::Joker) {
+                    return Self::ThreeOfAKind;
+                }
+
+                Self::OnePair
+            }
+            5 => {
+                if card_counts.contains_key(&Card::Joker) {
+                    return Self::OnePair;
+                }
+
+                Self::HighCard
+            }
             _ => unreachable!(),
         }
     }
@@ -46,6 +77,7 @@ impl From<[Card; 5]> for HandType {
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum Card {
+    Joker,
     Two,
     Three,
     Four,
@@ -55,7 +87,6 @@ enum Card {
     Eight,
     Nine,
     Ten,
-    Jack,
     Queen,
     King,
     Ace,
@@ -66,6 +97,7 @@ impl TryFrom<char> for Card {
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
+            'J' => Ok(Self::Joker),
             '2' => Ok(Self::Two),
             '3' => Ok(Self::Three),
             '4' => Ok(Self::Four),
@@ -75,7 +107,6 @@ impl TryFrom<char> for Card {
             '8' => Ok(Self::Eight),
             '9' => Ok(Self::Nine),
             'T' => Ok(Self::Ten),
-            'J' => Ok(Self::Jack),
             'Q' => Ok(Self::Queen),
             'K' => Ok(Self::King),
             'A' => Ok(Self::Ace),
@@ -131,7 +162,7 @@ impl FromStr for Problem {
     }
 }
 
-pub fn solve_part_1(p: &mut Problem) -> u64 {
+pub fn solve(p: &mut Problem) -> u64 {
     let Problem { games } = p;
 
     games.sort_by_key(|c| c.0);
@@ -170,8 +201,8 @@ QQQJA 483";
                     ),
                     (
                         Hand {
-                            cards: [Card::Ten, Card::Five, Card::Five, Card::Jack, Card::Five],
-                            hand_type: HandType::ThreeOfAKind,
+                            cards: [Card::Ten, Card::Five, Card::Five, Card::Joker, Card::Five],
+                            hand_type: HandType::FourOfAKind,
                         },
                         684
                     ),
@@ -184,15 +215,21 @@ QQQJA 483";
                     ),
                     (
                         Hand {
-                            cards: [Card::King, Card::Ten, Card::Jack, Card::Jack, Card::Ten],
-                            hand_type: HandType::TwoPair,
+                            cards: [Card::King, Card::Ten, Card::Joker, Card::Joker, Card::Ten],
+                            hand_type: HandType::FourOfAKind,
                         },
                         220
                     ),
                     (
                         Hand {
-                            cards: [Card::Queen, Card::Queen, Card::Queen, Card::Jack, Card::Ace],
-                            hand_type: HandType::ThreeOfAKind,
+                            cards: [
+                                Card::Queen,
+                                Card::Queen,
+                                Card::Queen,
+                                Card::Joker,
+                                Card::Ace
+                            ],
+                            hand_type: HandType::FourOfAKind,
                         },
                         483
                     )
@@ -201,9 +238,15 @@ QQQJA 483";
         );
     }
 
+    // #[test]
+    // fn test_solve_part_1() {
+    //     let mut p: Problem = TEST_INPUT.parse().unwrap();
+    //     assert_eq!(solve(&mut p), 6440);
+    // }
+
     #[test]
-    fn test_solve_part_1() {
+    fn test_solve_part_2() {
         let mut p: Problem = TEST_INPUT.parse().unwrap();
-        assert_eq!(solve_part_1(&mut p), 6440);
+        assert_eq!(solve(&mut p), 5905);
     }
 }
