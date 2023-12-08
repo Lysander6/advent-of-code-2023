@@ -78,6 +78,48 @@ pub fn solve_part_1(p: &Problem) -> usize {
     unreachable!()
 }
 
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 {
+        return a;
+    }
+
+    gcd(b, a.rem_euclid(b))
+}
+
+fn lcm(a: usize, b: usize) -> usize {
+    a * (b / gcd(a, b))
+}
+
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> Option<usize> {
+    let Problem { instructions, map } = p;
+    let starting_nodes = map.keys().filter(|k| k.ends_with('A'));
+
+    let steps_to_reach = starting_nodes
+        .map(|n| {
+            let mut current_node = n;
+
+            for (i, instr) in instructions.iter().cycle().enumerate() {
+                if current_node.ends_with('Z') {
+                    // TODO: check if directly checking last index isn't more efficient
+                    return i;
+                }
+
+                let paths = &map[current_node];
+
+                match instr {
+                    Instruction::Left => current_node = &paths.0,
+                    Instruction::Right => current_node = &paths.1,
+                }
+            }
+
+            unreachable!()
+        })
+        .collect::<Vec<_>>();
+
+    steps_to_reach.into_iter().reduce(lcm)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,6 +142,18 @@ AAA = (BBB, BBB)
 BBB = (AAA, ZZZ)
 ZZZ = (ZZZ, ZZZ)";
 
+    const TEST_INPUT_3: &str = "\
+LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)";
+
     #[test]
     fn test_input_parsing() {
         let p: Problem = TEST_INPUT.parse().unwrap();
@@ -114,5 +168,21 @@ ZZZ = (ZZZ, ZZZ)";
         assert_eq!(solve_part_1(&p1), 2);
         let p2: Problem = TEST_INPUT_2.parse().unwrap();
         assert_eq!(solve_part_1(&p2), 6);
+    }
+
+    #[test]
+    fn test_gcd() {
+        assert_eq!(gcd(48, 18), 6);
+    }
+
+    #[test]
+    fn test_lcm() {
+        assert_eq!(lcm(21, 6), 42);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT_3.parse().unwrap();
+        assert_eq!(solve_part_2(&p), Some(6));
     }
 }
