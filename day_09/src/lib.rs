@@ -52,14 +52,16 @@ fn solve2(seq: &[i64]) -> i64 {
     let mut diff_seqs: Vec<Vec<i64>> = vec![seq.to_vec()];
     let mut ptrs: Vec<usize> = vec![0];
 
-    'outer: loop {
+    'outer: while !diff_seqs
+        .get(diff_seqs.len().saturating_sub(3))
+        .is_some_and(|v| v.len() > 2 && v.iter().all(|&n| n == 0))
+    {
         diff_seqs.push(vec![]);
 
         for (seq_i, ptr) in ptrs.iter_mut().enumerate() {
             if *ptr + 1 == diff_seqs[seq_i].len() {
                 break 'outer;
             }
-
             let new = diff_seqs[seq_i][*ptr + 1] - diff_seqs[seq_i][*ptr];
             diff_seqs[seq_i + 1].push(new);
 
@@ -134,5 +136,16 @@ mod tests {
     fn test_solve_part_2() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_2(&p), 2);
+    }
+
+    #[test]
+    fn test_optimized_solve2() {
+        assert_eq!(
+            solve2(&[
+                3, 10, 27, 68, 169, 402, 899, 1895, 3816, 7471, 14456, 27943, 54110, 104_575,
+                200_340, 377_950, 698_857, 1_263_392, 2_231_345, 3_852_006, 6_507_719
+            ]),
+            4
+        );
     }
 }
