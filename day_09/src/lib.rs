@@ -28,7 +28,11 @@ fn solve(seq: &[i64]) -> i64 {
     let mut diff_seqs: Vec<Vec<i64>> = vec![a];
     let mut ptrs: Vec<usize> = vec![0];
 
-    while *diff_seqs.last().unwrap().first().unwrap() != 0 {
+    while diff_seqs
+        .last()
+        .and_then(|s| s.first())
+        .is_some_and(|&n| n != 0)
+    {
         diff_seqs.push(vec![]);
 
         for (seq_i, ptr) in ptrs.iter_mut().enumerate() {
@@ -44,10 +48,44 @@ fn solve(seq: &[i64]) -> i64 {
     diff_seqs.into_iter().map(|s| s[0]).sum()
 }
 
+fn solve2(seq: &[i64]) -> i64 {
+    let mut diff_seqs: Vec<Vec<i64>> = vec![seq.to_vec()];
+    let mut ptrs: Vec<usize> = vec![0];
+
+    'outer: loop {
+        diff_seqs.push(vec![]);
+
+        for (seq_i, ptr) in ptrs.iter_mut().enumerate() {
+            if *ptr + 1 == diff_seqs[seq_i].len() {
+                break 'outer;
+            }
+
+            let new = diff_seqs[seq_i][*ptr + 1] - diff_seqs[seq_i][*ptr];
+            diff_seqs[seq_i + 1].push(new);
+
+            *ptr += 1;
+        }
+
+        ptrs.push(0);
+    }
+
+    diff_seqs
+        .iter()
+        .rev()
+        .filter_map(|v| v.first())
+        .fold(0, |acc, s| -acc + s)
+}
+
 #[must_use]
 pub fn solve_part_1(p: &Problem) -> i64 {
     let Problem { sequences } = p;
     sequences.iter().map(|seq| solve(seq)).sum()
+}
+
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> i64 {
+    let Problem { sequences } = p;
+    sequences.iter().map(|seq| solve2(seq)).sum()
 }
 
 #[cfg(test)]
@@ -83,5 +121,18 @@ mod tests {
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p), 114);
+    }
+
+    #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(&[0, 3, 6, 9, 12, 15]), -3);
+        assert_eq!(solve2(&[1, 3, 6, 10, 15, 21]), 0);
+        assert_eq!(solve2(&[10, 13, 16, 21, 30, 45]), 5);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        assert_eq!(solve_part_2(&p), 2);
     }
 }
