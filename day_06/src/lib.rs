@@ -52,6 +52,10 @@ pub fn count_ways_to_win(race_time: f64, record_distance: f64) -> usize {
     let delta = t * t - 4.0 * d;
     let left = (t - delta.sqrt()) / 2.0;
     let right = (t + delta.sqrt()) / 2.0;
+    // Find first (/last) whole number strictly greater (/less) than found root(s), keeping in
+    // mind the case where it already falls at exact whole number (last example case graciously
+    // provided by the puzzle creator). Then, having that inclusive range, calculate number of
+    // whole numbers inside it (abs diff between them + 1).
     let result = ((left + 1.0).floor() - (right - 1.0).ceil()).abs() + 1.0;
 
     result.floor() as usize

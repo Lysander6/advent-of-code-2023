@@ -101,7 +101,6 @@ pub fn solve_part_2(p: &Problem) -> Option<usize> {
 
             for (i, instr) in instructions.iter().cycle().enumerate() {
                 if current_node.ends_with('Z') {
-                    // TODO: check if directly checking last index isn't more efficient
                     return i;
                 }
 
