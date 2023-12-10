@@ -175,16 +175,14 @@ fn get_exit_pos(
     }
 }
 
-// 1. Go both ways and count steps
-// 2. When you end up on same tile, return count of steps
-
-#[must_use]
-pub fn solve_part_1(p: &Problem) -> usize {
-    let Problem { map, start_pos } = p;
+fn get_start_pipes(
+    map: &Vec<Vec<Tile>>,
+    start_pos: (usize, usize),
+) -> ((usize, usize), (usize, usize)) {
     let start_pipe_candidates =
-        neighbour_indices_4dir(*start_pos, (map.len() - 1, map[0].len() - 1));
+        neighbour_indices_4dir(start_pos, (map.len() - 1, map[0].len() - 1));
 
-    let (x, y) = *start_pos;
+    let (x, y) = start_pos;
 
     let start_pipes = start_pipe_candidates
         .into_iter()
@@ -207,15 +205,19 @@ pub fn solve_part_1(p: &Problem) -> usize {
 
     debug_assert!(start_pipes.len() == 2);
 
-    let mut first_pipe_pos = start_pipes[0];
-    let mut first_pipe_entry = *start_pos;
-    let mut second_pipe_pos = start_pipes[1];
-    let mut second_pipe_entry = *start_pos;
+    (start_pipes[0], start_pipes[1])
+}
 
-    // dbg!(
-    //     &map[first_pipe_pos.0][first_pipe_pos.1],
-    //     &map[second_pipe_pos.0][second_pipe_pos.1],
-    // );
+// 1. Go both ways and count steps
+// 2. When you end up on same tile, return count of steps
+
+#[must_use]
+pub fn solve_part_1(p: &Problem) -> usize {
+    let Problem { map, start_pos } = p;
+
+    let (mut first_pipe_pos, mut second_pipe_pos) = get_start_pipes(map, *start_pos);
+    let mut first_pipe_entry = *start_pos;
+    let mut second_pipe_entry = *start_pos;
 
     let mut result = 1;
     while first_pipe_pos != second_pipe_pos {
@@ -234,11 +236,6 @@ pub fn solve_part_1(p: &Problem) -> usize {
             &map[second_pipe_pos.0][second_pipe_pos.1],
         );
         second_pipe_entry = temp2;
-
-        // dbg!(
-        //     &map[first_pipe_pos.0][first_pipe_pos.1],
-        //     &map[second_pipe_pos.0][second_pipe_pos.1],
-        // );
 
         result += 1;
     }
