@@ -29,7 +29,7 @@ impl FromStr for Problem {
     }
 }
 
-fn expand_space(p: &Problem) -> Vec<(usize, usize)> {
+fn expand_space(p: &Problem, expansion_coeff: usize) -> Vec<(usize, usize)> {
     let Problem { map, galaxies } = p;
     let mut galaxies = galaxies.clone();
 
@@ -37,7 +37,7 @@ fn expand_space(p: &Problem) -> Vec<(usize, usize)> {
         if map[i].iter().all(|g| !g) {
             for (x, _) in &mut galaxies {
                 if *x > i {
-                    *x += 1;
+                    *x += expansion_coeff;
                 }
             }
         }
@@ -47,7 +47,7 @@ fn expand_space(p: &Problem) -> Vec<(usize, usize)> {
         if (0..map.len()).map(|i| map[i][j]).all(|g| !g) {
             for (_, y) in &mut galaxies {
                 if *y > j {
-                    *y += 1;
+                    *y += expansion_coeff;
                 }
             }
         }
@@ -60,19 +60,30 @@ fn dist((a_x, a_y): &(usize, usize), (b_x, b_y): &(usize, usize)) -> usize {
     a_x.abs_diff(*b_x) + a_y.abs_diff(*b_y)
 }
 
-#[must_use]
-pub fn solve_part_1(p: &Problem) -> usize {
-    let expanded_galaxies = expand_space(p);
-
+fn pair_distance_sum(galaxies: &[(usize, usize)]) -> usize {
     let mut result = 0;
 
-    for (i, a) in expanded_galaxies.iter().enumerate() {
-        for b in &expanded_galaxies[(i + 1)..] {
+    for (i, a) in galaxies.iter().enumerate() {
+        for b in &galaxies[(i + 1)..] {
             result += dist(a, b);
         }
     }
 
     result
+}
+
+#[must_use]
+pub fn solve_part_1(p: &Problem) -> usize {
+    let expanded_galaxies = expand_space(p, 1);
+
+    pair_distance_sum(&expanded_galaxies)
+}
+
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> usize {
+    let expanded_galaxies = expand_space(p, 1_000_000 - 1);
+
+    pair_distance_sum(&expanded_galaxies)
 }
 
 #[cfg(test)]
@@ -106,7 +117,7 @@ mod tests {
     #[test]
     fn test_expand_space() {
         let p: Problem = TEST_INPUT.parse().unwrap();
-        let expanded_galaxies = expand_space(&p);
+        let expanded_galaxies = expand_space(&p, 1);
         assert_eq!(
             expanded_galaxies,
             vec![
@@ -126,7 +137,7 @@ mod tests {
     #[test]
     fn test_dist() {
         let p: Problem = TEST_INPUT.parse().unwrap();
-        let expanded_galaxies = expand_space(&p);
+        let expanded_galaxies = expand_space(&p, 1);
         assert_eq!(dist(&expanded_galaxies[4], &expanded_galaxies[8]), 9);
         assert_eq!(dist(&expanded_galaxies[0], &expanded_galaxies[6]), 15);
         assert_eq!(dist(&expanded_galaxies[2], &expanded_galaxies[5]), 17);
@@ -137,5 +148,19 @@ mod tests {
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p), 374);
+    }
+
+    #[test]
+    fn test_10_times_expansion() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        let galaxies = expand_space(&p, 10 - 1);
+        assert_eq!(pair_distance_sum(&galaxies), 1030);
+    }
+
+    #[test]
+    fn test_100_times_expansion() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        let galaxies = expand_space(&p, 100 - 1);
+        assert_eq!(pair_distance_sum(&galaxies), 8410);
     }
 }
