@@ -23,7 +23,7 @@ impl TryFrom<char> for SpringState {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct ConditionRecord {
     record: Vec<SpringState>,
     criteria: Vec<usize>,
@@ -99,6 +99,44 @@ fn is_valid_arrangement(record: &[SpringState], criteria: &[usize]) -> bool {
     criteria_ptr == criteria.len()
 }
 
+fn solve(record: &[SpringState], criteria: &[usize]) -> usize {
+    let mut result = 0;
+    let found_damaged = record
+        .iter()
+        .filter(|&s| *s == SpringState::Damaged)
+        .count();
+    let expected_damaged = criteria.iter().sum::<usize>();
+
+    let missing_damaged = expected_damaged - found_damaged;
+    let unknown_indices = record
+        .iter()
+        .enumerate()
+        .filter_map(|(i, s)| (*s == SpringState::Unknown).then_some(i));
+
+    for indices_to_damage in unknown_indices.combinations(missing_damaged) {
+        let mut new_record: Vec<_> = record
+            .iter()
+            .map(|s| {
+                if *s == SpringState::Unknown {
+                    SpringState::Operational
+                } else {
+                    *s
+                }
+            })
+            .collect();
+
+        for i in indices_to_damage {
+            new_record[i] = SpringState::Damaged;
+        }
+
+        if is_valid_arrangement(&new_record, criteria) {
+            result += 1;
+        }
+    }
+
+    result
+}
+
 // Part 1: brute force
 // Determine number of missing damaged springs, then change this many `?` to `#` and rest to `.`
 // and check if record is valid.
@@ -110,39 +148,40 @@ pub fn solve_part_1(p: &Problem) -> usize {
     let mut result = 0;
 
     for ConditionRecord { record, criteria } in records {
-        let found_damaged = record
-            .iter()
-            .filter(|&s| *s == SpringState::Damaged)
-            .count();
-        let expected_damaged = criteria.iter().sum::<usize>();
+        result += solve(record, criteria);
+    }
 
-        let missing_damaged = expected_damaged - found_damaged;
-        let unknown_indices = record
-            .iter()
-            .enumerate()
-            .filter_map(|(i, s)| (*s == SpringState::Unknown).then_some(i));
+    result
+}
 
-        for indices_to_damage in unknown_indices.combinations(missing_damaged) {
-            let mut new_record: Vec<_> = record
-                .clone()
-                .into_iter()
-                .map(|s| {
-                    if s == SpringState::Unknown {
-                        SpringState::Operational
-                    } else {
-                        s
-                    }
-                })
-                .collect();
+fn unfold_record(r: ConditionRecord) -> ConditionRecord {
+    let ConditionRecord { record, criteria } = r;
 
-            for i in indices_to_damage {
-                new_record[i] = SpringState::Damaged;
-            }
+    let record = itertools::Itertools::intersperse(
+        vec![record.clone(); 5].into_iter(),
+        vec![SpringState::Unknown],
+    )
+    .flatten()
+    .collect::<Vec<_>>();
 
-            if is_valid_arrangement(&new_record, criteria) {
-                result += 1;
-            }
-        }
+    let criteria = vec![criteria.clone(); 5]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
+    ConditionRecord { record, criteria }
+}
+
+#[must_use]
+pub fn solve_part_2(p: &Problem) -> usize {
+    let Problem { records } = p;
+
+    let mut result = 0;
+
+    for record in records {
+        let ConditionRecord { record, criteria } = unfold_record(record.clone());
+
+        result += solve(&record, &criteria);
     }
 
     result
@@ -202,5 +241,11 @@ mod tests {
     fn test_solve_part_1() {
         let p: Problem = TEST_INPUT.parse().unwrap();
         assert_eq!(solve_part_1(&p), 21);
+    }
+
+    #[test]
+    fn test_solve_part_2() {
+        let p: Problem = TEST_INPUT.parse().unwrap();
+        assert_eq!(solve_part_2(&p), 525_152);
     }
 }
