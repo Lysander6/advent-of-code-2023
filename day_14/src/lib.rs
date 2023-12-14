@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{cmp::Reverse, collections::BinaryHeap, str::FromStr};
 
 use anyhow::bail;
 
@@ -44,22 +44,55 @@ fn slide_north(map: &[Vec<Cell>]) -> Vec<Vec<Cell>> {
     let mut map = map.to_owned();
     let rows = map.len();
 
+    let cube_indices_in_row = (0..map.len())
+        .map(|i| {
+            map[i]
+                .iter()
+                .filter_map(move |c| (*c == Cell::CubeRock).then_some(i))
+                .collect()
+        })
+        .collect::<Vec<Vec<_>>>();
+
+    let cube_indices_in_col = (0..map[0].len())
+        .map(|j| {
+            (0..map.len())
+                .filter(|&i| map[i][j] == Cell::CubeRock)
+                .collect()
+        })
+        .collect::<Vec<Vec<_>>>();
+
+    let mut round_indices_in_row = (0..map.len())
+        .map(|i| {
+            map[i]
+                .iter()
+                .filter_map(move |c| (*c == Cell::RoundRock).then_some(Reverse(i)))
+                .collect::<BinaryHeap<_>>()
+        })
+        .collect::<Vec<_>>();
+
+    let mut round_indices_in_col = (0..map[0].len())
+        .map(|j| {
+            (0..map.len())
+                .filter_map(|i| (map[i][j] == Cell::RoundRock).then_some(Reverse(i)))
+                .collect::<BinaryHeap<_>>()
+        })
+        .collect::<Vec<_>>();
+
     for col in 0..map[0].len() {
-        let (cube_indices, round_indices): (Vec<_>, Vec<_>) = (0..map.len())
-            .filter(|&i| map[i][col] == Cell::CubeRock || map[i][col] == Cell::RoundRock)
-            .partition(|&i| map[i][col] == Cell::CubeRock);
+        let cube_indices = &cube_indices_in_col[col];
+        let round_indices = &round_indices_in_col[col];
 
         let mut fall_to_idx = 0;
 
-        let mut cube_indices = cube_indices.into_iter().peekable();
-        let mut round_indices = round_indices.into_iter().peekable();
+        let mut cube_indices = cube_indices.iter().peekable();
+        let mut round_indices = round_indices.iter().peekable();
 
         loop {
             while round_indices
                 .peek()
-                .is_some_and(|i| i < cube_indices.peek().unwrap_or(&usize::MAX))
+                .is_some_and(|&Reverse(i)| i < cube_indices.peek().unwrap_or(&&usize::MAX))
             {
-                let round_idx = round_indices.next().unwrap();
+                let round_idx = round_indices.next().unwrap().0;
                 map[round_idx][col] = Cell::Empty;
                 map[fall_to_idx][col] = Cell::RoundRock;
                 fall_to_idx += 1;
